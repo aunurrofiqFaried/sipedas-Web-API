@@ -36,7 +36,7 @@ class UserImporter extends Importer
             ImportColumn::make('role')
                 ->label('Role (guru / guru_bk / kesiswaan / kepala_sekolah)')
                 ->requiredMapping()
-                ->rules(['required', 'in:guru,guru_bk,kesiswaan,kepala_sekolah']),
+                ->rules(['required', 'in:guru,guru_bk,kesiswaan,kepala_sekolah,staf']),
 
             // password hanya diubah kalau kolomnya terisi
             ImportColumn::make('password')

@@ -49,7 +49,7 @@ class JadwalForm
                     'name',
                     modifyQueryUsing: fn (Builder $query) => $query
                         ->where('is_active', true)
-                        ->whereIn('role', ['guru', 'guru_bk', 'kesiswaan']),
+                        ->whereIn('role', ['guru', 'guru_bk', 'kesiswaan', 'kepala_sekolah']),
                 )
                 ->searchable()
                 ->preload()

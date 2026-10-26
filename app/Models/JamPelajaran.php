@@ -3,12 +3,21 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 
 class JamPelajaran extends Model
 {
     protected $table = 'jam_pelajaran';
 
     protected $fillable = ['jam_ke', 'jam_mulai', 'jam_selesai'];
+
+    protected static ?Collection $cache = null;
+
+    // Semua jam pelajaran, diindeks menurut nomor jam ke- (dimuat sekali per permintaan)
+    public static function semua(): Collection
+    {
+        return static::$cache ??= static::all()->keyBy('jam_ke');
+    }
 
     protected static function booted(): void
     {

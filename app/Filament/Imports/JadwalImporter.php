@@ -83,7 +83,7 @@ class JadwalImporter extends Importer
         $username = strtolower(trim($this->data['guru']));
         $guru = User::where('username', $username)
             ->where('is_active', true)
-            ->whereIn('role', [User::ROLE_GURU, User::ROLE_GURU_BK, User::ROLE_KESISWAAN])
+            ->whereIn('role', [User::ROLE_GURU, User::ROLE_GURU_BK, User::ROLE_KESISWAAN, User::ROLE_KEPALA_SEKOLAH])
             ->first()
             ?? throw new RowImportFailedException("Guru dengan username '{$username}' tidak ditemukan atau tidak aktif.");
 

@@ -19,6 +19,7 @@ class User extends Authenticatable implements FilamentUser
     public const ROLE_GURU_BK = 'guru_bk';
     public const ROLE_KESISWAAN = 'kesiswaan';
     public const ROLE_KEPALA_SEKOLAH = 'kepala_sekolah';
+    public const ROLE_STAF = 'staf';
 
     public const ROLES = [
         self::ROLE_ADMIN,
@@ -34,6 +35,7 @@ class User extends Authenticatable implements FilamentUser
     self::ROLE_GURU_BK => 'Guru BK',
     self::ROLE_KESISWAAN => 'Waka Kesiswaan',
     self::ROLE_KEPALA_SEKOLAH => 'Kepala Sekolah',
+    self::ROLE_STAF => 'Staf',
     ];
 
     protected $fillable = [
