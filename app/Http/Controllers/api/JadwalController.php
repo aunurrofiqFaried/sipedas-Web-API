@@ -70,4 +70,37 @@ class JadwalController extends Controller
             'piket' => $piket,
         ]);
     }
+    // GET /api/jadwal/saya
+    // Seluruh jadwal mingguan guru pada tahun ajaran aktif + rentang tanggalnya
+    public function saya(Request $request): JsonResponse
+    {
+        $ta = TahunAjaran::aktif() ?? abort(422, 'Tahun ajaran aktif belum diatur.');
+
+        $data = Jadwal::with(['kelas:id,nama', 'mapel:id,nama', 'ruang:id,nama,tipe'])
+            ->where('guru_id', $request->user()->id)
+            ->where('tahun_ajaran_id', $ta->id)
+            ->orderBy('hari')
+            ->orderBy('jam_mulai')
+            ->get()
+            ->map(fn (Jadwal $j) => [
+                'id' => $j->id,
+                'hari' => (int) $j->hari,
+                'kelas' => $j->kelas,
+                'mapel' => $j->mapel,
+                'ruang' => $j->ruang,
+                'jam_ke_mulai' => $j->jam_ke_mulai,
+                'jam_ke_selesai' => $j->jam_ke_selesai,
+                'jam_mulai' => substr($j->jam_mulai, 0, 5),
+                'jam_selesai' => substr($j->jam_selesai, 0, 5),
+            ]);
+
+        return response()->json([
+            'tahun_ajaran' => [
+                'nama' => $ta->nama,
+                'tanggal_mulai' => $ta->tanggal_mulai->toDateString(),
+                'tanggal_selesai' => $ta->tanggal_selesai->toDateString(),
+            ],
+            'data' => $data,
+        ]);
+    }
 }

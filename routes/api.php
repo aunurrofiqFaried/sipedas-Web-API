@@ -22,6 +22,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Fitur harian guru (admin selalu lolos di middleware role)
     Route::middleware('role:guru,guru_bk,kesiswaan,kepala_sekolah')->group(function () {
         Route::get('/jadwal/hari-ini', [JadwalController::class, 'hariIni']);
+        Route::get('/jadwal/saya', [JadwalController::class, 'saya']);
 
         Route::get('/absensi/kelas-hari-ini', [AbsensiController::class, 'kelasHariIni']);
         Route::get('/kelas/{kelas}/siswa', [AbsensiController::class, 'siswa']);
