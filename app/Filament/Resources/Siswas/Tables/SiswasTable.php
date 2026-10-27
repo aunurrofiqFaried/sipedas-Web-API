@@ -20,6 +20,7 @@ use Illuminate\Database\Eloquent\Collection;
 use App\Filament\Imports\SiswaImporter;
 use Filament\Actions\ImportAction;
 use App\Filament\Resources\Siswas\SiswaResource;
+use App\Models\Siswa;
 
 class SiswasTable
 {
@@ -38,6 +39,9 @@ class SiswasTable
 
             TextColumn::make('jenis_kelamin')
                 ->label('L/P'),
+            
+            TextColumn::make('agama')
+            ->toggleable(),
 
             TextColumn::make('kelasSiswaAktif.kelas.nama')
                 ->label('Kelas')
@@ -71,6 +75,8 @@ class SiswasTable
                         fn (Builder $k) => $k->where('kelas_id', $kelasId)
                     )
                 )),
+            SelectFilter::make('agama')
+                ->options(array_combine(Siswa::AGAMA, Siswa::AGAMA)),
 
             TernaryFilter::make('is_active')
                 ->label('Status aktif'),

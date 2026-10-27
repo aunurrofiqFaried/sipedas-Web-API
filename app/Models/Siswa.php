@@ -10,10 +10,12 @@ class Siswa extends Model
 {
     protected $table = 'siswa';
 
+    public const AGAMA = ['Islam', 'Kristen', 'Katolik', 'Hindu', 'Buddha', 'Konghucu'];
+
     protected $fillable = [
-    'nis', 'nisn', 'nama', 'jenis_kelamin',
-    'nama_wali', 'hubungan_wali', 'no_hp_wali',
-    'is_active',
+        'nis', 'nisn', 'nama', 'jenis_kelamin', 'agama',
+        'nama_wali', 'hubungan_wali', 'no_hp_wali',
+        'is_active',
     ];
 
     protected function casts(): array

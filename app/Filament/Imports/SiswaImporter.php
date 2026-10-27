@@ -36,6 +36,28 @@ class SiswaImporter extends Importer
                 ->rules(['required', 'in:L,P,l,p'])
                 ->castStateUsing(fn (?string $state): ?string => $state ? strtoupper(trim($state)) : null),
 
+            ImportColumn::make('agama')
+                ->label('Agama (Islam/Kristen/Katolik/Hindu/Buddha/Konghucu)')
+                ->rules([
+                    'nullable',
+                    function (string $attribute, mixed $value, \Closure $fail) {
+                        $dikenal = collect(Siswa::AGAMA)
+                            ->contains(fn ($a) => strtolower($a) === strtolower(trim((string) $value)));
+
+                        if (filled($value) && ! $dikenal) {
+                            $fail("Agama '{$value}' tidak dikenal.");
+                        }
+                    },
+                ])
+                ->fillRecordUsing(function (Siswa $record, ?string $state): void {
+                    if (blank($state)) {
+                        return; // kosong = tidak mengubah nilai yang sudah ada
+                    }
+
+                    $record->agama = collect(Siswa::AGAMA)
+                        ->first(fn ($a) => strtolower($a) === strtolower(trim($state)));
+                }),
+
             ImportColumn::make('nama_wali')
                 ->rules(['nullable', 'max:100']),
 

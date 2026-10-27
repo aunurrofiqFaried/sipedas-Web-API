@@ -69,7 +69,13 @@ class JadwalPiketForm
             ->label('Sampai jam ke-')
             ->options(fn () => JamPelajaran::opsi())
             ->required()
-            ->rules(['integer', 'gte:jam_ke_mulai']),
+            ->rules([
+                fn (Get $get): \Closure => function (string $attribute, mixed $value, \Closure $fail) use ($get) {
+                    if ((int) $value < (int) $get('jam_ke_mulai')) {
+                        $fail('Jam selesai tidak boleh lebih awal dari jam mulai.');
+                    }
+                },
+            ]),
 
         TextInput::make('tugas')
             ->label('Tugas piket (opsional)')
