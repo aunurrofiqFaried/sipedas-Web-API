@@ -9,6 +9,8 @@ use App\Models\TahunAjaran;
 use App\Services\JadwalService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use App\Models\JadwalPiket;
+use App\Models\JamPelajaran;
 
 class JadwalController extends Controller
 {
@@ -41,13 +43,31 @@ class JadwalController extends Controller
             'jam_mulai' => substr($j->jam_mulai, 0, 5),
             'jam_selesai' => substr($j->jam_selesai, 0, 5),
             'sudah_jurnal' => in_array((int) $j->id, $sudahJurnal, true),
-            'bisa_isi_jurnal' => JadwalService::dalamJamMengajar($j, $now),
+            'bisa_isi_jurnal' => JadwalService::bisaDiisi($j, $now),
         ]);
+
+        // Piket guru ini hari ini (hanya yang sudah punya jam)
+        $jam = JamPelajaran::semua();
+
+        $piket = JadwalPiket::where('user_id', $request->user()->id)
+            ->where('tahun_ajaran_id', $ta->id)
+            ->where('hari', $now->dayOfWeekIso)
+            ->whereNotNull('jam_ke_mulai')
+            ->orderBy('jam_ke_mulai')
+            ->get()
+            ->map(fn (JadwalPiket $p) => [
+                'jam_ke_mulai' => (int) $p->jam_ke_mulai,
+                'jam_ke_selesai' => (int) $p->jam_ke_selesai,
+                'jam_mulai' => substr((string) $jam->get($p->jam_ke_mulai)?->jam_mulai, 0, 5),
+                'jam_selesai' => substr((string) $jam->get($p->jam_ke_selesai)?->jam_selesai, 0, 5),
+                'tugas' => $p->tugas,
+            ]);
 
         return response()->json([
             'tanggal' => $now->toDateString(),
             'jam_server' => $now->format('H:i:s'),
             'data' => $data,
+            'piket' => $piket,
         ]);
     }
 }

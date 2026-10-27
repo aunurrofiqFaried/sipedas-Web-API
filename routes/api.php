@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\JurnalController;
 use App\Http\Controllers\Api\PelanggaranController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\KontakWaliController;
+use App\Http\Controllers\Api\SholatController;
 
 // Publik: login dibatasi 5 percobaan per menit
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
@@ -32,6 +33,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/pelanggaran/jenis', [PelanggaranController::class, 'jenis']);
         Route::get('/siswa/cari', [PelanggaranController::class, 'cariSiswa']);
         Route::post('/pelanggaran', [PelanggaranController::class, 'store']);
+
+        Route::get('/sholat/kelas-saya', [SholatController::class, 'kelasSaya']);
+        Route::get('/sholat/{waktu}/kelas/{kelas}', [SholatController::class, 'siswa']);
+        Route::post('/sholat', [SholatController::class, 'store']);
     });
 
     // Melihat riwayat pelanggaran siswa (kepala sekolah boleh melihat)

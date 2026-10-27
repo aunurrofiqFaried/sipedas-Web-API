@@ -38,11 +38,10 @@ class JurnalController extends Controller
 
         abort_unless((int) $jadwal->guru_id === (int) $user->id, 403, 'Ini bukan jadwal Anda.');
 
-        // Validasi memakai jam SERVER, bukan jam HP
         abort_unless(
-            JadwalService::dalamJamMengajar($jadwal),
+            JadwalService::bisaDiisi($jadwal),
             422,
-            'Jurnal hanya dapat diisi pada hari dan jam mengajar sesuai jadwal.'
+            'Jurnal hanya dapat diisi pada hari jadwal tersebut.'
         );
 
         $jurnal = Jurnal::updateOrCreate(
