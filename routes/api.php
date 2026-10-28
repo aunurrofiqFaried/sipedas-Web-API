@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\PelanggaranController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\KontakWaliController;
 use App\Http\Controllers\Api\SholatController;
+use App\Http\Controllers\Api\RekapController;
 
 // Publik: login dibatasi 5 percobaan per menit
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
@@ -38,6 +39,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/sholat/kelas-saya', [SholatController::class, 'kelasSaya']);
         Route::get('/sholat/{waktu}/kelas/{kelas}', [SholatController::class, 'siswa']);
         Route::post('/sholat', [SholatController::class, 'store']);
+
+        Route::get('/rekap/kelas', [RekapController::class, 'kelas']);
+        Route::get('/rekap/absensi', [RekapController::class, 'absensi']);
     });
 
     // Melihat riwayat pelanggaran siswa (kepala sekolah boleh melihat)
