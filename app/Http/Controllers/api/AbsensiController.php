@@ -15,30 +15,56 @@ use Illuminate\Support\Facades\DB;
 use App\Support\Wa;
 use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rule;
+use App\Models\Jadwal;
+use App\Models\JamPelajaran;
 
 class AbsensiController extends Controller
 {
     // GET /api/absensi/kelas-hari-ini
-    // Kelas yang boleh diabsen user hari ini
+    // Kelas yang boleh diabsen user hari ini, beserta alasannya
     public function kelasHariIni(Request $request): JsonResponse
     {
+        $user = $request->user();
         $ta = TahunAjaran::aktif() ?? abort(422, 'Tahun ajaran aktif belum diatur.');
         $today = now()->toDateString();
 
-        $data = $this->kelasBolehAbsen($request->user(), $ta)
+        // Kelas tempat guru ini mengajar di jam ke-1 atau ke-2 hari ini
+        $kelasJadwal = Jadwal::where('tahun_ajaran_id', $ta->id)
+            ->where('guru_id', $user->id)
+            ->where('hari', now()->dayOfWeekIso)
+            ->where('jam_ke_mulai', '<=', 2)
+            ->pluck('kelas_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        $urutan = ['admin' => 0, 'wali' => 0, 'jadwal' => 1, 'pengganti' => 2];
+
+        $data = $this->kelasBolehAbsen($user, $ta)
             ->orderBy('nama')
             ->get()
-            ->map(fn (Kelas $k) => [
-                'id' => $k->id,
-                'nama' => $k->nama,
-                'jumlah_siswa' => DB::table('kelas_siswa')
-                    ->where('kelas_id', $k->id)
-                    ->where('tahun_ajaran_id', $ta->id)
-                    ->count(),
-                'sudah_diabsen' => Absensi::where('kelas_id', $k->id)
-                    ->where('tanggal', $today)
-                    ->count(),
-            ]);
+            ->map(function (Kelas $k) use ($ta, $today, $user, $kelasJadwal) {
+                $alasan = match (true) {
+                    $user->role === User::ROLE_ADMIN => 'admin',
+                    (int) $k->wali_kelas_id === (int) $user->id => 'wali',
+                    in_array((int) $k->id, $kelasJadwal, true) => 'jadwal',
+                    default => 'pengganti',
+                };
+
+                return [
+                    'id' => $k->id,
+                    'nama' => $k->nama,
+                    'alasan' => $alasan,
+                    'jumlah_siswa' => DB::table('kelas_siswa')
+                        ->where('kelas_id', $k->id)
+                        ->where('tahun_ajaran_id', $ta->id)
+                        ->count(),
+                    'sudah_diabsen' => Absensi::where('kelas_id', $k->id)
+                        ->where('tanggal', $today)
+                        ->count(),
+                ];
+            })
+            ->sortBy(fn (array $k) => $urutan[$k['alasan']])
+            ->values();
 
         return response()->json(['tanggal' => $today, 'data' => $data]);
     }
@@ -179,10 +205,12 @@ class AbsensiController extends Controller
     }
 
     /**
-     * Aturan: boleh mengabsen kelas X hari ini jika user adalah
+     * Boleh mengabsen kelas X hari ini jika user adalah:
      *  - admin, atau
      *  - wali kelas X, atau
-     *  - guru yang punya jadwal di kelas X hari ini pada jam pertama/kedua.
+     *  - guru yang mengajar di kelas X hari ini pada jam ke-1/2, atau
+     *  - orang yang sudah mengabsen kelas X hari ini (untuk mengubahnya hari itu juga), atau
+     *  - siapa saja yang berstatus guru, kalau kelas X belum diabsen dan jam ke-2 sudah dimulai
      */
     private function kelasBolehAbsen(User $user, TahunAjaran $ta): Builder
     {
@@ -192,9 +220,17 @@ class AbsensiController extends Controller
             return $query;
         }
 
-        $hari = now()->dayOfWeekIso;
+        $sekarang = now();
+        $hari = $sekarang->dayOfWeekIso;
+        $hariIni = $sekarang->toDateString();
 
-        return $query->where(function (Builder $w) use ($user, $hari) {
+        // Cadangan terbuka begitu jam ke-2 dimulai, hanya pada hari sekolah
+        $jam2 = JamPelajaran::semua()->get(2);
+        $penggantiBuka = $hari <= 5
+            && $jam2 !== null
+            && $sekarang->format('H:i:s') >= $jam2->jam_mulai;
+
+        return $query->where(function (Builder $w) use ($user, $hari, $hariIni, $penggantiBuka) {
             $w->where('wali_kelas_id', $user->id)
                 ->orWhereExists(function ($s) use ($user, $hari) {
                     $s->select(DB::raw(1))
@@ -203,7 +239,26 @@ class AbsensiController extends Controller
                         ->where('jadwal.guru_id', $user->id)
                         ->where('jadwal.hari', $hari)
                         ->where('jadwal.jam_ke_mulai', '<=', 2);
+                })
+                ->orWhereExists(function ($s) use ($user, $hariIni) {
+                    $s->select(DB::raw(1))
+                        ->from('absensi')
+                        ->whereColumn('absensi.kelas_id', 'kelas.id')
+                        ->where('absensi.tanggal', $hariIni)
+                        ->where('absensi.diinput_oleh', $user->id);
                 });
+
+            if ($penggantiBuka) {
+                $w->orWhere(function (Builder $f) use ($hariIni) {
+                    $f->has('siswa')
+                        ->whereNotExists(function ($s) use ($hariIni) {
+                            $s->select(DB::raw(1))
+                                ->from('absensi')
+                                ->whereColumn('absensi.kelas_id', 'kelas.id')
+                                ->where('absensi.tanggal', $hariIni);
+                        });
+                });
+            }
         });
     }
 }
