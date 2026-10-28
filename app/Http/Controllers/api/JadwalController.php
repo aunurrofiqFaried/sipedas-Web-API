@@ -93,6 +93,24 @@ class JadwalController extends Controller
                 'jam_mulai' => substr($j->jam_mulai, 0, 5),
                 'jam_selesai' => substr($j->jam_selesai, 0, 5),
             ]);
+        // Piket mingguan guru ini (hanya yang sudah punya jam)
+        $jam = JamPelajaran::semua();
+
+        $piket = JadwalPiket::where('user_id', $request->user()->id)
+            ->where('tahun_ajaran_id', $ta->id)
+            ->whereNotNull('jam_ke_mulai')
+            ->orderBy('hari')
+            ->orderBy('jam_ke_mulai')
+            ->get()
+            ->map(fn (JadwalPiket $p) => [
+                'id' => $p->id,
+                'hari' => (int) $p->hari,
+                'jam_ke_mulai' => (int) $p->jam_ke_mulai,
+                'jam_ke_selesai' => (int) $p->jam_ke_selesai,
+                'jam_mulai' => substr((string) $jam->get($p->jam_ke_mulai)?->jam_mulai, 0, 5),
+                'jam_selesai' => substr((string) $jam->get($p->jam_ke_selesai)?->jam_selesai, 0, 5),
+                'tugas' => $p->tugas,
+            ]);
 
         return response()->json([
             'tahun_ajaran' => [
@@ -101,6 +119,7 @@ class JadwalController extends Controller
                 'tanggal_selesai' => $ta->tanggal_selesai->toDateString(),
             ],
             'data' => $data,
+            'piket' => $piket,
         ]);
     }
 }
