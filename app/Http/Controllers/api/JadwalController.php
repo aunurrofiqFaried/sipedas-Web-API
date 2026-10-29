@@ -11,7 +11,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use App\Models\JadwalPiket;
 use App\Models\JamPelajaran;
-use Illuminate\Support\Carbon;
+
 
 class JadwalController extends Controller
 {
@@ -122,39 +122,5 @@ class JadwalController extends Controller
             'data' => $data,
             'piket' => $piket,
         ]);
-    }
-    
-    // GET /api/jurnal/bulan?bulan=2026-10
-    // Semua jurnal milik guru yang login pada satu bulan
-    public function bulan(Request $request): JsonResponse
-    {
-        $data = $request->validate([
-            'bulan' => ['required', 'regex:/^\d{4}-(0[1-9]|1[0-2])$/'],
-        ]);
-
-        $awal = Carbon::createFromFormat('Y-m-d', $data['bulan'] . '-01')->startOfMonth();
-        $akhir = $awal->copy()->endOfMonth();
-
-        $jurnal = Jurnal::with(['kelas:id,nama', 'jadwal.mapel:id,nama'])
-            ->where('guru_id', $request->user()->id)
-            ->whereBetween('tanggal', [$awal->toDateString(), $akhir->toDateString()])
-            ->orderBy('tanggal')
-            ->orderBy('id')
-            ->get()
-            ->map(fn (Jurnal $j) => [
-                'id' => $j->id,
-                'jadwal_id' => $j->jadwal_id,
-                'tanggal' => $j->tanggal->toDateString(),
-                'materi' => $j->materi,
-                'catatan' => $j->catatan,
-                'kelas' => $j->kelas,
-                'mapel' => $j->jadwal?->mapel,
-                'jam_ke_mulai' => $j->jadwal?->jam_ke_mulai,
-                'jam_ke_selesai' => $j->jadwal?->jam_ke_selesai,
-                'jam_mulai' => $j->jadwal ? substr($j->jadwal->jam_mulai, 0, 5) : null,
-                'jam_selesai' => $j->jadwal ? substr($j->jadwal->jam_selesai, 0, 5) : null,
-            ]);
-
-        return response()->json(['bulan' => $data['bulan'], 'data' => $jurnal]);
     }
 }
