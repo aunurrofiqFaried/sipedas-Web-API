@@ -31,6 +31,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::get('/jurnal', [JurnalController::class, 'index']);
         Route::post('/jurnal', [JurnalController::class, 'store']);
+        Route::get('/jurnal/bulan', [JurnalController::class, 'bulan']);
 
         Route::get('/pelanggaran/jenis', [PelanggaranController::class, 'jenis']);
         Route::get('/siswa/cari', [PelanggaranController::class, 'cariSiswa']);
